@@ -162,11 +162,11 @@ class AutoBudget():
                         compilation_sheet.cell(existing_cost_types.get(cost_type), i_col + offset_individual, actual_cost).font = self.font_standard
 
         # Sum all columns
-        row = compilation_sheet.max_row+2
-        compilation_sheet.cell(row, self.offset, "Totalt").font = self.font_small_bold
+        row_total = compilation_sheet.max_row+2
+        compilation_sheet.cell(row_total, self.offset, "Totalt").font = self.font_small_bold
         for col in range(self.offset+1,compilation_sheet.max_column+1):
             column_letter = get_column_letter(col)
-            compilation_sheet.cell(row, col, f"=SUM({column_letter}{2}:{column_letter}{row-2})").font = self.font_small_bold
+            compilation_sheet.cell(row_total, col, f"=SUM({column_letter}{2}:{column_letter}{row_total-2})").font = self.font_small_bold
 
         # Accumulation of sums
         row = compilation_sheet.max_row+1
@@ -177,7 +177,16 @@ class AutoBudget():
                 compilation_sheet.cell(row, col, f"=SUM({column_letter}{row-1}+0)").font = self.font_small_bold
             else:
                 compilation_sheet.cell(row, col, f"=SUM({column_letter}{row-1}+{get_column_letter(col-same_every_col)}{row})").font = self.font_small_bold
+        
+        # Move budget sums
+        row = compilation_sheet.max_row+1
+        compilation_sheet.cell(row, self.offset, "Totalt Budget").font = self.font_small_bold
+        for col in range(self.offset+2, compilation_sheet.max_column+1, same_every_col):
+            budget_sum = compilation_sheet.cell(row_total, col).value
+            compilation_sheet.cell(row_total, col, "-").font = self.font_standard
+            compilation_sheet.cell(row, col-1, budget_sum).font = self.font_small_bold
 
+        # Style
         self.style_sheet(compilation_sheet, same_every_col)
 
     def autosize_column(self, ws, columnrange, length = 0):
