@@ -52,6 +52,8 @@ class AutoBudget():
             )
 
         self.offset = 2 # Offset from 0 where table begins
+        self.year = ""
+        self.standard_cols = 2 # columns: [month, budget] 
 
 #------------------------------------------------------------------------------------------------------------
 #           Load Data
@@ -131,7 +133,7 @@ class AutoBudget():
     def make_compilation(self):
         compilation_sheet = self.workbook.active
         compilation_sheet.title = "Sammanställning Kostnadsslag"
-        same_every_col = len(self.cost_center_set)+2
+        same_every_col = len(self.cost_center_set)+self.standard_cols
 
         # Add standard headers to worksheet
         month_header = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -146,6 +148,7 @@ class AutoBudget():
         existing_cost_types = {}
         for date, cost_center_list in self.budget_dict.items():
             i_col = (int(date[:3])-1)*same_every_col + self.offset+1
+            self.year = date[3:]
 
             # Actual & cost types
             month_cost_dict_actual = self.sum_month(cost_center_list, 0)
@@ -166,7 +169,7 @@ class AutoBudget():
             # Add cost for individual cost centers
             cost_center_list = sorted(cost_center_list, key=itemgetter('id'))
             for i, cost_center_dict in enumerate(cost_center_list):
-                offset_individual = i + 2
+                offset_individual = i + self.standard_cols
                 #for cost_center, df in cost_center_dict.items():
                 self.write_to_cell(compilation_sheet, self.offset, i_col + offset_individual, cost_center_dict['id'], self.font_standard)
                 for cost_type, row in cost_center_dict[cost_center_dict['id']].iterrows():
@@ -174,33 +177,48 @@ class AutoBudget():
                     if actual_cost:
                         self.write_to_cell(compilation_sheet, existing_cost_types.get(cost_type), i_col + offset_individual, actual_cost, self.font_standard, style=True)
 
+        self.make_sum_rows(compilation_sheet, same_every_col)
+        self.style_sheet(compilation_sheet, same_every_col)
+
+    def make_sum_rows(self, sheet, same_every_col):
         # Sum all columns
-        row_total = compilation_sheet.max_row+2
-        self.write_to_cell(compilation_sheet, row_total, self.offset, "Totalt", self.font_small_bold)
-        for col in range(self.offset+1,compilation_sheet.max_column+1):
+        row_total = sheet.max_row+2
+        self.write_to_cell(sheet, row_total, self.offset, "Totalt", self.font_small_bold)
+        for col in range(self.offset+1,sheet.max_column+1):
             column_letter = get_column_letter(col)
-            self.write_to_cell(compilation_sheet, row_total, col, f"=SUM({column_letter}{2}:{column_letter}{row_total-2})", self.font_small_bold, style=True)
+          self.write_to_cell(sheet, row_total, col, f"=SUM({column_letter}{2}:{column_letter}{row_total-2})", self.font_small_bold, style=True)
 
         # Accumulation of sums
-        row = compilation_sheet.max_row+1
-        self.write_to_cell(compilation_sheet, row, self.offset, "Totalt (ACC)", self.font_small_bold)
-        for col in range(self.offset+1, compilation_sheet.max_column+1, same_every_col):
+        row = sheet.max_row+1
+        self.write_to_cell(sheet, row, self.offset, "Totalt (ACC)", self.font_small_bold)
+        for col in range(self.offset+1, sheet.max_column+1, same_every_col):
             column_letter = get_column_letter(col)
             if col == self.offset+1:
-                self.write_to_cell(compilation_sheet, row, col, f"=SUM({column_letter}{row-1}+0)", self.font_small_bold, style=True)
+                self.write_to_cell(sheet, row, col, f"=SUM({column_letter}{row-1}+0)", self.font_small_bold, style=True)
             else:
-                self.write_to_cell(compilation_sheet, row, col, f"=SUM({column_letter}{row-1}+{get_column_letter(col-same_every_col)}{row})", self.font_small_bold, style=True)
+                self.write_to_cell(sheet, row, col, f"=SUM({column_letter}{row-1}+{get_column_letter(col-same_every_col)}{row})", self.font_small_bold, style=True)
         
         # Move budget sums
-        row = compilation_sheet.max_row+1
-        self.write_to_cell(compilation_sheet, row, self.offset, "Totalt Budget", self.font_small_bold)
-        for col in range(self.offset+2, compilation_sheet.max_column+1, same_every_col):
-            budget_sum = compilation_sheet.cell(row_total, col).value
-            self.write_to_cell(compilation_sheet, row_total, col, "-", self.font_standard, style=True)
-            self.write_to_cell(compilation_sheet, row, col-1, budget_sum, self.font_small_bold, style=True)
+        row = sheet.max_row+1
+        self.write_to_cell(sheet, row, self.offset, "Totalt Budget", self.font_small_bold)
+        for col in range(self.offset+2, sheet.max_column+1, same_every_col):
+            budget_sum = sheet.cell(row_total, col).value
+            self.write_to_cell(sheet, row_total, col, "-", self.font_standard, style=True)
+            if ('00'+str(int((col-self.offset)/same_every_col+1))+self.year) in self.budget_dict.keys():
+                self.write_to_cell(sheet, row, col-1, budget_sum, self.font_small_bold, style=True)
+            else:
+                self.write_to_cell(sheet, row, col-1, f"=MEDIAN({get_column_letter(self.offset+1)}{row}:{get_column_letter(col-2)}{row})", self.font_small_bold, style=True)
 
-        # Style
-        self.style_sheet(compilation_sheet, same_every_col)
+        # Accumulation of budgets
+        row = sheet.max_row+1
+        self.write_to_cell(sheet, row, self.offset, "Budget (ACC)", self.font_small_bold)
+        for col in range(self.offset+1, sheet.max_column+1, same_every_col):
+            column_letter = get_column_letter(col)
+            if col == self.offset+1:
+                self.write_to_cell(sheet, row, col, f"=SUM({column_letter}{row-1}+0)", self.font_small_bold, style=True)
+            else:
+                self.write_to_cell(sheet, row, col, f"=SUM({column_letter}{row-1}+{get_column_letter(col-same_every_col)}{row})", self.font_small_bold, style=True)
+                
 
 #------------------------------------------------------------------------------------------------------------
 #           Fix style
