@@ -107,50 +107,59 @@ class AutoBudget():
         for dict in cost_center_list:
             df = list(dict.values())[0]
             for index, row in df.iterrows():
-                actual_cost = row[pos]
-                if actual_cost:
-                    if not index in month_dict:
-                        month_dict[index] = float(actual_cost)
-                    else:
-                        month_dict[index] += float(actual_cost)
+                cost = row[pos]
+                if not cost:
+                    cost = 0
+                if not index in month_dict:
+                    month_dict[index] = float(cost)
+                else:
+                    month_dict[index] += float(cost)
         return month_dict
         
 
     def make_compilation(self):
         compilation_sheet = self.workbook.active
         compilation_sheet.title = "Sammanställning Kostnadsslag"
-        same_every_col = len(self.cost_center_set)+1
+        same_every_col = len(self.cost_center_set)+2
 
-        # Add month headers to worksheet
+        # Add standard headers to worksheet
         month_header = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
         for i in range(len(month_header)):
             compilation_sheet.cell(self.offset,i*same_every_col+self.offset+1, month_header[i]).font = self.font_bold
+            compilation_sheet.cell(self.offset,i*same_every_col+self.offset+2, "Budget").font = self.font_small_bold
         compilation_sheet.cell(self.offset,self.offset, compilation_sheet.title).font = self.font_bold
 
-        # Add all costs and cost types to worksheet
+        # Add costs and cost types to worksheet
         existing_cost_types = {}
         for date, cost_center_list in self.budget_dict.items():
-            column_index = (int(date[:3])-1)*same_every_col + self.offset+1
-            month_cost_dict = self.sum_month(cost_center_list, 0)
-            for cost_type, cost in month_cost_dict.items():
-                if cost_type in existing_cost_types.keys():
-                        compilation_sheet.cell(existing_cost_types.get(cost_type), column_index, cost).font = self.font_standard
-                else:
-                    row_index = compilation_sheet.max_row + 1
-                    compilation_sheet.cell(row_index, self.offset, cost_type).font = self.font_standard
-                    existing_cost_types[cost_type] = row_index
-                    compilation_sheet.cell(row_index, column_index, cost).font = self.font_standard
+            i_col = (int(date[:3])-1)*same_every_col + self.offset+1
 
-            # Add cost for indevidual cost centers
+            # Actual & cost types
+            month_cost_dict_actual = self.sum_month(cost_center_list, 0)
+            for cost_type, cost in month_cost_dict_actual.items():
+                if cost_type in existing_cost_types.keys():
+                        compilation_sheet.cell(existing_cost_types.get(cost_type), i_col, cost).font = self.font_standard
+                else:
+                    i_row = compilation_sheet.max_row + 1
+                    compilation_sheet.cell(i_row, self.offset, cost_type).font = self.font_standard # Add cost type
+                    existing_cost_types[cost_type] = i_row
+                    compilation_sheet.cell(i_row, i_col, cost).font = self.font_standard
+
+            # Planned
+            month_cost_dict_planned = self.sum_month(cost_center_list, 1)
+            for cost_type, cost in month_cost_dict_planned.items():
+                compilation_sheet.cell(existing_cost_types.get(cost_type), i_col+1, cost).font = self.font_standard
+
+            # Add cost for individual cost centers
             cost_center_list = sorted(cost_center_list, key=itemgetter('id'))
             for i, cost_center_dict in enumerate(cost_center_list):
-                offset = i + 1
+                offset_individual = i + 2
                 #for cost_center, df in cost_center_dict.items():
-                compilation_sheet.cell(self.offset, column_index + offset, cost_center_dict['id']).font = self.font_small_bold
-                for index, row in cost_center_dict[cost_center_dict['id']].iterrows():
+                compilation_sheet.cell(self.offset, i_col + offset_individual, cost_center_dict['id']).font = self.font_small_bold
+                for cost_type, row in cost_center_dict[cost_center_dict['id']].iterrows():
                     actual_cost = row[0]
                     if actual_cost:
-                        compilation_sheet.cell(existing_cost_types.get(index), column_index + offset, actual_cost).font = self.font_standard
+                        compilation_sheet.cell(existing_cost_types.get(cost_type), i_col + offset_individual, actual_cost).font = self.font_standard
 
         # Sum all columns
         row = compilation_sheet.max_row+2
@@ -233,7 +242,7 @@ class AutoBudget():
 
         # Hide columns
         sheet.sheet_properties.outlinePr.summaryRight = False
-        for i in range(len(self.cost_center_set)): # Grouping several at once does not work, but one at a time works
+        for i in range(same_every_col-1): # Grouping several at once does not work, but one at a time works
             for col in range(self.offset+2+i, sheet.max_column, same_every_col):
                 sheet.column_dimensions.group(get_column_letter(col), get_column_letter(col), hidden=True) 
 
