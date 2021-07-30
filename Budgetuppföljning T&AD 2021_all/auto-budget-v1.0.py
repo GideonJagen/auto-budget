@@ -232,9 +232,10 @@ class AutoBudget():
         self.set_thick_border(sheet, self.offset, self.offset, sheet.max_row, sheet.max_column)
 
         # Hide columns
-        length = len(self.cost_center_set)-1
-        for col in range(self.offset+2, sheet.max_column, same_every_col):
-            sheet.column_dimensions.group(get_column_letter(col), get_column_letter(col+length), hidden=True)
+        sheet.sheet_properties.outlinePr.summaryRight = False
+        for i in range(len(self.cost_center_set)): # Grouping several at once does not work, but one at a time works
+            for col in range(self.offset+2+i, sheet.max_column, same_every_col):
+                sheet.column_dimensions.group(get_column_letter(col), get_column_letter(col), hidden=True) 
 
         # Size columns
         self.autosize_column(sheet, [self.offset])
