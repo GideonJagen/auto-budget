@@ -52,6 +52,7 @@ class AutoBudget():
             )
 
         self.offset = 2 # Offset from 0 where table begins
+        self.year = ""
         self.standard_cols = 2 # columns: [month, budget] 
 
 
@@ -134,6 +135,7 @@ class AutoBudget():
         existing_cost_types = {}
         for date, cost_center_list in self.budget_dict.items():
             i_col = (int(date[:3])-1)*same_every_col + self.offset+1
+            self.year = date[3:]
 
             # Actual & cost types
             month_cost_dict_actual = self.sum_month(cost_center_list, 0)
@@ -166,38 +168,56 @@ class AutoBudget():
                         compilation_sheet.cell(existing_cost_types.get(cost_type), i_col + offset_individual, actual_cost).font = self.font_standard
                         compilation_sheet.cell(existing_cost_types.get(cost_type), i_col + offset_individual, actual_cost).style = 'Comma [0]'
 
+        self.make_sum_rows(compilation_sheet, same_every_col)
+        self.style_sheet(compilation_sheet, same_every_col)
+
+    def make_sum_rows(self, sheet, same_every_col):
         # Sum all columns
-        row_total = compilation_sheet.max_row+2
-        compilation_sheet.cell(row_total, self.offset, "Totalt").font = self.font_small_bold
-        for col in range(self.offset+1,compilation_sheet.max_column+1):
+        row_total = sheet.max_row+2
+        sheet.cell(row_total, self.offset, "Totalt").font = self.font_small_bold
+        for col in range(self.offset+1,sheet.max_column+1):
             column_letter = get_column_letter(col)
-            compilation_sheet.cell(row_total, col, f"=SUM({column_letter}{2}:{column_letter}{row_total-2})").font = self.font_small_bold
-            compilation_sheet.cell(row_total, col, f"=SUM({column_letter}{2}:{column_letter}{row_total-2})").style = 'Comma [0]'
+            sheet.cell(row_total, col, f"=SUM({column_letter}{2}:{column_letter}{row_total-2})").font = self.font_small_bold
+            sheet.cell(row_total, col, f"=SUM({column_letter}{2}:{column_letter}{row_total-2})").style = 'Comma [0]'
 
         # Accumulation of sums
-        row = compilation_sheet.max_row+1
-        compilation_sheet.cell(row, self.offset, "Totalt (ACC)").font = self.font_small_bold
-        for col in range(self.offset+1, compilation_sheet.max_column+1, same_every_col):
+        row = sheet.max_row+1
+        sheet.cell(row, self.offset, "Totalt (ACC)").font = self.font_small_bold
+        for col in range(self.offset+1, sheet.max_column+1, same_every_col):
             column_letter = get_column_letter(col)
             if col == self.offset+1:
-                compilation_sheet.cell(row, col, f"=SUM({column_letter}{row-1}+0)").font = self.font_small_bold
-                compilation_sheet.cell(row, col, f"=SUM({column_letter}{row-1}+0)").style = 'Comma [0]'
+                sheet.cell(row, col, f"=SUM({column_letter}{row-1}+0)").font = self.font_small_bold
+                sheet.cell(row, col, f"=SUM({column_letter}{row-1}+0)").style = 'Comma [0]'
             else:
-                compilation_sheet.cell(row, col, f"=SUM({column_letter}{row-1}+{get_column_letter(col-same_every_col)}{row})").font = self.font_small_bold
-                compilation_sheet.cell(row, col, f"=SUM({column_letter}{row-1}+{get_column_letter(col-same_every_col)}{row})").style = 'Comma [0]'
+                sheet.cell(row, col, f"=SUM({column_letter}{row-1}+{get_column_letter(col-same_every_col)}{row})").font = self.font_small_bold
+                sheet.cell(row, col, f"=SUM({column_letter}{row-1}+{get_column_letter(col-same_every_col)}{row})").style = 'Comma [0]'
         
         # Move budget sums
-        row = compilation_sheet.max_row+1
-        compilation_sheet.cell(row, self.offset, "Totalt Budget").font = self.font_small_bold
-        for col in range(self.offset+2, compilation_sheet.max_column+1, same_every_col):
-            budget_sum = compilation_sheet.cell(row_total, col).value
-            compilation_sheet.cell(row_total, col, "-").font = self.font_standard
-            compilation_sheet.cell(row_total, col, "-").style = 'Comma [0]'
-            compilation_sheet.cell(row, col-1, budget_sum).font = self.font_small_bold
-            compilation_sheet.cell(row, col-1, budget_sum).style = 'Comma [0]'
+        row = sheet.max_row+1
+        sheet.cell(row, self.offset, "Totalt Budget").font = self.font_small_bold
+        for col in range(self.offset+2, sheet.max_column+1, same_every_col):
+            budget_sum = sheet.cell(row_total, col).value
+            sheet.cell(row_total, col, "-").font = self.font_standard
+            sheet.cell(row_total, col, "-").style = 'Comma [0]'
+            if ('00'+str(int((col-self.offset)/same_every_col+1))+self.year) in self.budget_dict.keys():
+                sheet.cell(row, col-1, budget_sum).font = self.font_small_bold
+                sheet.cell(row, col-1, budget_sum).style = 'Comma [0]'
+            else:
+                sheet.cell(row, col-1, f"=MEDIAN({get_column_letter(self.offset+1)}{row}:{get_column_letter(col-2)}{row})").font = self.font_small_bold
+                sheet.cell(row, col-1).style = 'Comma [0]'
 
-        # Style
-        self.style_sheet(compilation_sheet, same_every_col)
+        # Accumulation of budgets
+        row = sheet.max_row+1
+        sheet.cell(row, self.offset, "Budget (ACC)").font = self.font_small_bold
+        for col in range(self.offset+1, sheet.max_column+1, same_every_col):
+            column_letter = get_column_letter(col)
+            if col == self.offset+1:
+                sheet.cell(row, col, f"=SUM({column_letter}{row-1}+0)").font = self.font_small_bold
+                sheet.cell(row, col, f"=SUM({column_letter}{row-1}+0)").style = 'Comma [0]'
+            else:
+                sheet.cell(row, col, f"=SUM({column_letter}{row-1}+{get_column_letter(col-same_every_col)}{row})").font = self.font_small_bold
+                sheet.cell(row, col, f"=SUM({column_letter}{row-1}+{get_column_letter(col-same_every_col)}{row})").style = 'Comma [0]'
+
 
     def autosize_column(self, ws, columnrange, length = 0):
         for column in columnrange:
