@@ -53,6 +53,7 @@ class AutoBudget():
 
         self.offset = 2 # Offset from 0 where table begins
         self.year = ""
+        self.standard_cols = 2 # columns: [month, budget] 
 
 
     def load_budgets(self, input_dir_path) -> dict:
@@ -121,7 +122,7 @@ class AutoBudget():
     def make_compilation(self):
         compilation_sheet = self.workbook.active
         compilation_sheet.title = "Sammanställning Kostnadsslag"
-        same_every_col = len(self.cost_center_set)+2
+        same_every_col = len(self.cost_center_set)+self.standard_cols
 
         # Add standard headers to worksheet
         month_header = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -158,7 +159,7 @@ class AutoBudget():
             # Add cost for individual cost centers
             cost_center_list = sorted(cost_center_list, key=itemgetter('id'))
             for i, cost_center_dict in enumerate(cost_center_list):
-                offset_individual = i + 2
+                offset_individual = i + self.standard_cols
                 #for cost_center, df in cost_center_dict.items():
                 compilation_sheet.cell(self.offset, i_col + offset_individual, cost_center_dict['id']).font = self.font_small_bold
                 for cost_type, row in cost_center_dict[cost_center_dict['id']].iterrows():
