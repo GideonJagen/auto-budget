@@ -171,7 +171,7 @@ class AutoBudget():
         for col in range(self.offset+1,compilation_sheet.max_column+1):
             column_letter = get_column_letter(col)
             compilation_sheet.cell(row_total, col, f"=SUM({column_letter}{2}:{column_letter}{row_total-2})").font = self.font_small_bold
-            compilation_sheet.cell(row_total, col, f"=SUM({column_letter}{2}:{column_letter}{row-2})").style = 'Comma [0]'
+            compilation_sheet.cell(row_total, col, f"=SUM({column_letter}{2}:{column_letter}{row_total-2})").style = 'Comma [0]'
 
         # Accumulation of sums
         row = compilation_sheet.max_row+1
