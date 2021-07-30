@@ -170,7 +170,6 @@ class AutoBudget():
             cost_center_list = sorted(cost_center_list, key=itemgetter('id'))
             for i, cost_center_dict in enumerate(cost_center_list):
                 offset_individual = i + self.standard_cols
-                #for cost_center, df in cost_center_dict.items():
                 self.write_to_cell(compilation_sheet, self.offset, i_col + offset_individual, cost_center_dict['id'], self.font_standard)
                 for cost_type, row in cost_center_dict[cost_center_dict['id']].iterrows():
                     actual_cost = row[0]
@@ -296,12 +295,12 @@ class AutoBudget():
         # Hide columns
         sheet.sheet_properties.outlinePr.summaryRight = False
         for i in range(same_every_col-1): # Grouping several at once does not work, but one at a time works
-            for col in range(self.offset+2+i, sheet.max_column, same_every_col):
+            for col in range(self.offset+2+i, sheet.max_column + 1, same_every_col):
                 sheet.column_dimensions.group(get_column_letter(col), get_column_letter(col), hidden=True) 
 
         # Size columns
         self.autosize_column(sheet, [self.offset])
-        self.autosize_column(sheet, range(self.offset+1,sheet.max_column), 10)
+        self.autosize_column(sheet, range(self.offset + 1, sheet.max_column + 1), 10)
 
 
 
