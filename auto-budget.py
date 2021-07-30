@@ -168,6 +168,16 @@ class AutoBudget():
             column_letter = get_column_letter(col)
             compilation_sheet.cell(row, col, f"=SUM({column_letter}{2}:{column_letter}{row-2})").font = self.font_small_bold
 
+        # Accumulation of sums
+        row = compilation_sheet.max_row+1
+        compilation_sheet.cell(row, self.offset, "Totalt (ACC)").font = self.font_small_bold
+        for col in range(self.offset+1, compilation_sheet.max_column+1, same_every_col):
+            column_letter = get_column_letter(col)
+            if col == self.offset+1:
+                compilation_sheet.cell(row, col, f"=SUM({column_letter}{row-1}+0)").font = self.font_small_bold
+            else:
+                compilation_sheet.cell(row, col, f"=SUM({column_letter}{row-1}+{get_column_letter(col-same_every_col)}{row})").font = self.font_small_bold
+
         self.style_sheet(compilation_sheet, same_every_col)
 
     def autosize_column(self, ws, columnrange, length = 0):
