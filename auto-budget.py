@@ -151,7 +151,7 @@ class AutoBudget():
             month_cost_dict_planned = self.sum_month(cost_center_list, 1)
             for cost_type, cost in month_cost_dict_planned.items():
                 compilation_sheet.cell(existing_cost_types.get(cost_type), i_col+1, cost).font = self.font_standard
-                compilation_sheet.cell(existing_cost_types.get(cost_type), i_col+1, cost).style = 'Comma [0]
+                compilation_sheet.cell(existing_cost_types.get(cost_type), i_col+1, cost).style = 'Comma [0]'
 
             # Add cost for individual cost centers
             cost_center_list = sorted(cost_center_list, key=itemgetter('id'))
