@@ -186,7 +186,7 @@ class AutoBudget():
         self.write_to_cell(sheet, row_total, self.offset, "Totalt", self.font_small_bold)
         for col in range(self.offset+1,sheet.max_column+1):
             column_letter = get_column_letter(col)
-          self.write_to_cell(sheet, row_total, col, f"=SUM({column_letter}{2}:{column_letter}{row_total-2})", self.font_small_bold, style=True)
+            self.write_to_cell(sheet, row_total, col, f"=SUM({column_letter}{2}:{column_letter}{row_total-2})", self.font_small_bold, style=True)
 
         # Accumulation of sums
         row = sheet.max_row+1
