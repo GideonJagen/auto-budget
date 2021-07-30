@@ -53,6 +53,9 @@ class AutoBudget():
 
         self.offset = 2 # Offset from 0 where table begins
 
+#------------------------------------------------------------------------------------------------------------
+#           Load Data
+#------------------------------------------------------------------------------------------------------------
 
     def load_budgets(self, input_dir_path) -> dict:
         budget_dict = {}
@@ -100,6 +103,15 @@ class AutoBudget():
 
         return budget_dict
 
+#------------------------------------------------------------------------------------------------------------
+#           Write Data
+#------------------------------------------------------------------------------------------------------------
+
+    def write_to_cell(self, sheet, row, col, value, font, style=False):
+        sheet.cell(row, col, value).font = font
+        if style:
+            sheet.cell(row, col).style = 'Comma [0]'
+    
     # Sum different costs based on actual cost
     # pos: cost = 0 budget = 1 
     def sum_month(self, cost_center_list, pos) -> dict:
@@ -115,7 +127,6 @@ class AutoBudget():
                 else:
                     month_dict[index] += float(cost)
         return month_dict
-        
 
     def make_compilation(self):
         compilation_sheet = self.workbook.active
@@ -125,9 +136,11 @@ class AutoBudget():
         # Add standard headers to worksheet
         month_header = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
         for i in range(len(month_header)):
-            compilation_sheet.cell(self.offset,i*same_every_col+self.offset+1, month_header[i]).font = self.font_bold
-            compilation_sheet.cell(self.offset,i*same_every_col+self.offset+2, "Budget").font = self.font_small_bold
-        compilation_sheet.cell(self.offset,self.offset, compilation_sheet.title).font = self.font_bold
+            self.write_to_cell(compilation_sheet, self.offset, i*same_every_col+self.offset+1, month_header[i], self.font_bold)
+            self.write_to_cell(compilation_sheet, self.offset, i*same_every_col+self.offset+2, "Budget", self.font_small_bold)
+
+        # Add title to worksheet
+        self.write_to_cell(compilation_sheet, self.offset, self.offset, compilation_sheet.title, self.font_bold)
 
         # Add costs and cost types to worksheet
         existing_cost_types = {}
@@ -138,65 +151,60 @@ class AutoBudget():
             month_cost_dict_actual = self.sum_month(cost_center_list, 0)
             for cost_type, cost in month_cost_dict_actual.items():
                 if cost_type in existing_cost_types.keys():
-                        compilation_sheet.cell(existing_cost_types.get(cost_type), i_col, cost).font = self.font_standard
-                        compilation_sheet.cell(existing_cost_types.get(cost_type), i_col, cost).style = 'Comma [0]'
+                    self.write_to_cell(compilation_sheet, existing_cost_types.get(cost_type), i_col, cost, self.font_standard, style=True)
                 else:
                     i_row = compilation_sheet.max_row + 1
-                    compilation_sheet.cell(i_row, self.offset, cost_type).font = self.font_standard # Add cost type
+                    self.write_to_cell(compilation_sheet, i_row, self.offset, cost_type, self.font_standard) # Add cost type
                     existing_cost_types[cost_type] = i_row
-                    compilation_sheet.cell(i_row, i_col, cost).font = self.font_standard
-                    compilation_sheet.cell(i_row, i_col, cost).style = 'Comma [0]'
+                    self.write_to_cell(compilation_sheet, i_row, i_col, cost, self.font_standard, style=True)
 
             # Planned
             month_cost_dict_planned = self.sum_month(cost_center_list, 1)
             for cost_type, cost in month_cost_dict_planned.items():
-                compilation_sheet.cell(existing_cost_types.get(cost_type), i_col+1, cost).font = self.font_standard
-                compilation_sheet.cell(existing_cost_types.get(cost_type), i_col+1, cost).style = 'Comma [0]'
+                self.write_to_cell(compilation_sheet, existing_cost_types.get(cost_type), i_col+1, cost, self.font_standard, style=True)
 
             # Add cost for individual cost centers
             cost_center_list = sorted(cost_center_list, key=itemgetter('id'))
             for i, cost_center_dict in enumerate(cost_center_list):
                 offset_individual = i + 2
                 #for cost_center, df in cost_center_dict.items():
-                compilation_sheet.cell(self.offset, i_col + offset_individual, cost_center_dict['id']).font = self.font_small_bold
+                self.write_to_cell(compilation_sheet, self.offset, i_col + offset_individual, cost_center_dict['id'], self.font_standard)
                 for cost_type, row in cost_center_dict[cost_center_dict['id']].iterrows():
                     actual_cost = row[0]
                     if actual_cost:
-                        compilation_sheet.cell(existing_cost_types.get(cost_type), i_col + offset_individual, actual_cost).font = self.font_standard
-                        compilation_sheet.cell(existing_cost_types.get(cost_type), i_col + offset_individual, actual_cost).style = 'Comma [0]'
+                        self.write_to_cell(compilation_sheet, existing_cost_types.get(cost_type), i_col + offset_individual, actual_cost, self.font_standard, style=True)
 
         # Sum all columns
         row_total = compilation_sheet.max_row+2
-        compilation_sheet.cell(row_total, self.offset, "Totalt").font = self.font_small_bold
+        self.write_to_cell(compilation_sheet, row_total, self.offset, "Totalt", self.font_small_bold)
         for col in range(self.offset+1,compilation_sheet.max_column+1):
             column_letter = get_column_letter(col)
-            compilation_sheet.cell(row_total, col, f"=SUM({column_letter}{2}:{column_letter}{row_total-2})").font = self.font_small_bold
-            compilation_sheet.cell(row_total, col, f"=SUM({column_letter}{2}:{column_letter}{row_total-2})").style = 'Comma [0]'
+            self.write_to_cell(compilation_sheet, row_total, col, f"=SUM({column_letter}{2}:{column_letter}{row_total-2})", self.font_small_bold, style=True)
 
         # Accumulation of sums
         row = compilation_sheet.max_row+1
-        compilation_sheet.cell(row, self.offset, "Totalt (ACC)").font = self.font_small_bold
+        self.write_to_cell(compilation_sheet, row, self.offset, "Totalt (ACC)", self.font_small_bold)
         for col in range(self.offset+1, compilation_sheet.max_column+1, same_every_col):
             column_letter = get_column_letter(col)
             if col == self.offset+1:
-                compilation_sheet.cell(row, col, f"=SUM({column_letter}{row-1}+0)").font = self.font_small_bold
-                compilation_sheet.cell(row, col, f"=SUM({column_letter}{row-1}+0)").style = 'Comma [0]'
+                self.write_to_cell(compilation_sheet, row, col, f"=SUM({column_letter}{row-1}+0)", self.font_small_bold, style=True)
             else:
-                compilation_sheet.cell(row, col, f"=SUM({column_letter}{row-1}+{get_column_letter(col-same_every_col)}{row})").font = self.font_small_bold
-                compilation_sheet.cell(row, col, f"=SUM({column_letter}{row-1}+{get_column_letter(col-same_every_col)}{row})").style = 'Comma [0]'
+                self.write_to_cell(compilation_sheet, row, col, f"=SUM({column_letter}{row-1}+{get_column_letter(col-same_every_col)}{row})", self.font_small_bold, style=True)
         
         # Move budget sums
         row = compilation_sheet.max_row+1
-        compilation_sheet.cell(row, self.offset, "Totalt Budget").font = self.font_small_bold
+        self.write_to_cell(compilation_sheet, row, self.offset, "Totalt Budget", self.font_small_bold)
         for col in range(self.offset+2, compilation_sheet.max_column+1, same_every_col):
             budget_sum = compilation_sheet.cell(row_total, col).value
-            compilation_sheet.cell(row_total, col, "-").font = self.font_standard
-            compilation_sheet.cell(row_total, col, "-").style = 'Comma [0]'
-            compilation_sheet.cell(row, col-1, budget_sum).font = self.font_small_bold
-            compilation_sheet.cell(row, col-1, budget_sum).style = 'Comma [0]'
+            self.write_to_cell(compilation_sheet, row_total, col, "-", self.font_standard, style=True)
+            self.write_to_cell(compilation_sheet, row, col-1, budget_sum, self.font_small_bold, style=True)
 
         # Style
         self.style_sheet(compilation_sheet, same_every_col)
+
+#------------------------------------------------------------------------------------------------------------
+#           Fix style
+#------------------------------------------------------------------------------------------------------------
 
     def autosize_column(self, ws, columnrange, length = 0):
         for column in columnrange:
@@ -276,6 +284,7 @@ class AutoBudget():
         # Size columns
         self.autosize_column(sheet, [self.offset])
         self.autosize_column(sheet, range(self.offset+1,sheet.max_column), 10)
+
 
 
 if __name__ == "__main__":
