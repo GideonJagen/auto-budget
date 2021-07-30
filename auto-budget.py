@@ -61,7 +61,7 @@ class AutoBudget():
             if file.endswith(".XLS"):
                 file_path = os.path.join(input_dir_path, file)
                 wb = xlrd.open_workbook(Path(file_path))
-                cost_report = wb.sheet_by_index(1)
+                cost_report = wb["Cost center report"]
 
                 # Find date, cost_center and table index
                 for index, row in enumerate(cost_report.get_rows()):
