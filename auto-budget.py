@@ -141,7 +141,7 @@ class AutoBudget():
         for i in range(len(self.month_header)):
             self.write_to_cell(compilation_sheet, self.offset, i*same_every_col+self.offset+1, self.month_header[i], self.font_bold)
             self.write_to_cell(compilation_sheet, self.offset, i*same_every_col+self.offset+2, self.column_standard_header[1], self.font_small_bold)
-            self.write_to_cell(compilation_sheet, self.offset, i*same_every_col+self.offset+2, self.column_standard_header[2], self.font_small_bold)
+            self.write_to_cell(compilation_sheet, self.offset, i*same_every_col+self.offset+3, self.column_standard_header[2], self.font_small_bold)
         
 
         # Add title to worksheet
@@ -172,7 +172,7 @@ class AutoBudget():
             # Add cost for individual cost centers
             cost_center_list = sorted(cost_center_list, key=itemgetter('id'))
             for i, cost_center_dict in enumerate(cost_center_list):
-                offset_individual = i + self.standard_cols
+                offset_individual = i + len(self.column_standard_header)
                 self.write_to_cell(compilation_sheet, self.offset, i_col + offset_individual, cost_center_dict['id'], self.font_standard)
                 for cost_type, row in cost_center_dict[cost_center_dict['id']].iterrows():
                     actual_cost = row[0]
@@ -301,17 +301,19 @@ class AutoBudget():
         color_3 = [self.color_blue_3, self.color_yellow_3]
         i_color = 1
         for i_col in range(1, sheet.max_column):
-            for i_row in range(1, sheet.max_row):
-                column_header = sheet.cell(self.offset, i_col).value
-                if i_col == self.offset:
-                    pass
-                elif column_header in self.month_header:
-                    i_color += 1
-                    sheet.cell(i_row, i_col).fill = color_1[i_color%2]
-                elif column_header in self.column_standard_headers:
-                    sheet.cell(i_row, i_col).fill = color_2[i_color%2]
-                else:
-                    sheet.cell(i_row, i_col).fill = color_3[i_color%2]
+            column_header = sheet.cell(self.offset, i_col).value
+            if column_header in self.month_header:
+                i_color += 1
+            for i_row in range(1, sheet.max_row + 1):
+                if i_row >= self.offset:
+                    if i_col == self.offset:
+                        pass
+                    elif column_header in self.month_header:
+                        sheet.cell(i_row, i_col).fill = color_1[i_color%2]
+                    elif column_header in self.column_standard_header:
+                        sheet.cell(i_row, i_col).fill = color_2[i_color%2]
+                    else:
+                        sheet.cell(i_row, i_col).fill = color_3[i_color%2]
 
         # Set column borders
         for col in range(self.offset, sheet.max_column + 1):
