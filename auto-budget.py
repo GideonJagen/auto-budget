@@ -53,7 +53,7 @@ class AutoBudget():
 
         self.offset = 2 # Offset from 0 where table begins
         self.year = ""
-        self.standard_cols = 2 # columns: [month, budget] 
+        self.standard_cols = 3 # columns: [month, budget, diff] 
 
 #------------------------------------------------------------------------------------------------------------
 #           Load Data
@@ -176,6 +176,15 @@ class AutoBudget():
                     if actual_cost:
                         self.write_to_cell(compilation_sheet, existing_cost_types.get(cost_type), i_col + offset_individual, actual_cost, self.font_standard, style=True)
 
+        # Differential Actual-Planned
+        col = self.offset + 3
+        self.write_to_cell(compilation_sheet, self.offset, col, "Diff", self.font_small_bold)
+        for i_col in range(col, compilation_sheet.max_column+1, same_every_col):
+            for i_row in range(self.offset +1, compilation_sheet.max_row+1):
+                budget_col_letter = get_column_letter(i_col-1)
+                actual_col_letter = get_column_letter(i_col-2)
+                self.write_to_cell(compilation_sheet, i_row, i_col, f"={budget_col_letter}{i_row}-{actual_col_letter}{i_row}", self.font_standard, style=True)
+        
         self.make_sum_rows(compilation_sheet, same_every_col)
         self.style_sheet(compilation_sheet, same_every_col)
 
@@ -224,6 +233,9 @@ class AutoBudget():
         for col in range(self.offset+1, sheet.max_column+1, same_every_col):
             column_letter = get_column_letter(col)
             self.write_to_cell(sheet, row, col, f"={column_letter}{row-2} - {column_letter}{row-4}", self.font_small_bold, style=True)
+
+            # Delete total duplicate in diff column
+            self.write_to_cell(sheet, row_total, col + 2, "-", self.font_standard, style=True)
 
         # Differential (ACC) row 
         row = sheet.max_row+1
