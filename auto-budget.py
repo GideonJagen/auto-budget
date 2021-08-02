@@ -20,11 +20,12 @@ class AutoBudget():
         self.font_bold = Font(name='Arial', bold=True, size=13)
         self.font_small_bold = Font(name='Arial', bold=True, size=11)
         self.font_standard = Font(name='Arial')
-        self.color_light_blue = PatternFill(fgColor='caddeb', fill_type='solid')
-        self.color_dark_blue = PatternFill(fgColor='8db0db', fill_type='solid')
-        self.color_light_red = PatternFill(fgColor='d8bdc2', fill_type='solid')
-        self.color_dark_red = PatternFill(fgColor='d99ea9', fill_type='solid')
-
+        self.color_yellow_1 = PatternFill(fgColor='e0d8c1', fill_type='solid')
+        self.color_yellow_2 = PatternFill(fgColor='e6e1d2', fill_type='solid')
+        self.color_yellow_3 = PatternFill(fgColor='eceae4', fill_type='solid')
+        self.color_blue_1 = PatternFill(fgColor='c1c9e0', fill_type='solid')
+        self.color_blue_2 = PatternFill(fgColor='d2d7e6', fill_type='solid')
+        self.color_blue_3 = PatternFill(fgColor='e4e6ec', fill_type='solid')
 
         self.border_thin = Border(
             left=Side(border_style='thin', color='CDCDCD'), 
@@ -51,9 +52,10 @@ class AutoBudget():
             bottom=Side(border_style='thick', color='000000')
             )
 
+        self.month_header = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        self.column_standard_header = ["Month", "Budget", "Diff"]
         self.offset = 2 # Offset from 0 where table begins
         self.year = ""
-        self.standard_cols = 3 # columns: [month, budget, diff] 
 
 #------------------------------------------------------------------------------------------------------------
 #           Load Data
@@ -133,13 +135,14 @@ class AutoBudget():
     def make_compilation(self):
         compilation_sheet = self.workbook.active
         compilation_sheet.title = "Sammanställning Kostnadsslag"
-        same_every_col = len(self.cost_center_set)+self.standard_cols
+        same_every_col = len(self.cost_center_set)+len(self.column_standard_header)
 
         # Add standard headers to worksheet
-        month_header = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        for i in range(len(month_header)):
-            self.write_to_cell(compilation_sheet, self.offset, i*same_every_col+self.offset+1, month_header[i], self.font_bold)
-            self.write_to_cell(compilation_sheet, self.offset, i*same_every_col+self.offset+2, "Budget", self.font_small_bold)
+        for i in range(len(self.month_header)):
+            self.write_to_cell(compilation_sheet, self.offset, i*same_every_col+self.offset+1, self.month_header[i], self.font_bold)
+            self.write_to_cell(compilation_sheet, self.offset, i*same_every_col+self.offset+2, self.column_standard_header[1], self.font_small_bold)
+            self.write_to_cell(compilation_sheet, self.offset, i*same_every_col+self.offset+3, self.column_standard_header[2], self.font_small_bold)
+        
 
         # Add title to worksheet
         self.write_to_cell(compilation_sheet, self.offset, self.offset, compilation_sheet.title, self.font_bold)
@@ -169,7 +172,7 @@ class AutoBudget():
             # Add cost for individual cost centers
             cost_center_list = sorted(cost_center_list, key=itemgetter('id'))
             for i, cost_center_dict in enumerate(cost_center_list):
-                offset_individual = i + self.standard_cols
+                offset_individual = i + len(self.column_standard_header)
                 self.write_to_cell(compilation_sheet, self.offset, i_col + offset_individual, cost_center_dict['id'], self.font_standard)
                 for cost_type, row in cost_center_dict[cost_center_dict['id']].iterrows():
                     actual_cost = row[0]
@@ -179,7 +182,6 @@ class AutoBudget():
 
         # Differential Actual-Planned
         col = self.offset + 3
-        self.write_to_cell(compilation_sheet, self.offset, col, "Diff", self.font_small_bold)
         for i_col in range(col, compilation_sheet.max_column+1, same_every_col):
             for i_row in range(self.offset +1, compilation_sheet.max_row+1):
                 budget_col_letter = get_column_letter(i_col-1)
@@ -294,30 +296,24 @@ class AutoBudget():
 
     def style_sheet(self, sheet, same_every_col):
         # Set column colors
-        color = 0
-        for i, col in enumerate(sheet.columns):
-            column_index = i+1
-            if column_index == self.offset:
-                # Decide this color later
-                pass
-            elif column_index == sheet.max_column:
-                pass
-            elif column_index > self.offset:
-                if (column_index - self.offset -1)%same_every_col == 0:
-                    color += 1
-                    for cell in col:
-                        if cell.row >= self.offset:
-                            if color%2 == 0:
-                                cell.fill = self.color_dark_red
-                            else:
-                                cell.fill = self.color_dark_blue
-                else:
-                    for cell in col:
-                        if cell.row >= self.offset:
-                            if color%2 == 0:
-                                cell.fill = self.color_light_red
-                            else:
-                                cell.fill = self.color_light_blue
+        color_1 = [self.color_blue_1, self.color_yellow_1]
+        color_2 = [self.color_blue_2, self.color_yellow_2]
+        color_3 = [self.color_blue_3, self.color_yellow_3]
+        i_color = 1
+        for i_col in range(1, sheet.max_column):
+            column_header = sheet.cell(self.offset, i_col).value
+            if column_header in self.month_header:
+                i_color += 1
+            for i_row in range(1, sheet.max_row + 1):
+                if i_row >= self.offset:
+                    if i_col == self.offset:
+                        pass
+                    elif column_header in self.month_header:
+                        sheet.cell(i_row, i_col).fill = color_1[i_color%2]
+                    elif column_header in self.column_standard_header:
+                        sheet.cell(i_row, i_col).fill = color_2[i_color%2]
+                    else:
+                        sheet.cell(i_row, i_col).fill = color_3[i_color%2]
 
         # Set column borders
         for col in range(self.offset, sheet.max_column + 1):
