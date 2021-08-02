@@ -128,7 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-*.XLS
+
 *.xlsx
-*.XLS#
 *.xlsx#
+
+data/
