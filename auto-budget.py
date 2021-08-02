@@ -340,6 +340,7 @@ class AutoBudget():
 if __name__ == "__main__":
 
     print("Hello, I am your budget automator")
-    budget = AutoBudget("./data/")
+    budget = AutoBudget("./dummydata/") # If you want to run with dummydata
+    #budget = AutoBudget("./data/")     # If you want to run with data
     budget.make_compilation()
     budget.workbook.save("Sammanställning.xlsx")
