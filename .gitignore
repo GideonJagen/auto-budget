@@ -132,4 +132,4 @@ dmypy.json
 *.xlsx
 *.xlsx#
 
-*/data/
+data/
