@@ -176,14 +176,14 @@ class AutoBudget():
                     if actual_cost:
                         self.write_to_cell(compilation_sheet, existing_cost_types.get(cost_type), i_col + offset_individual, actual_cost, self.font_standard, style=True)
 
-        month_columns = range(self.offset+1, compilation_sheet.max_column+1, same_every_col)
-        sum_col = compilation_sheet.max_column+1
+        # Add a sum of months for each row
+        self.write_to_cell(compilation_sheet, self.offset, compilation_sheet.max_column + 1, "Sum:", self.font_bold, style=False)
+        month_columns = range(self.offset+1, compilation_sheet.max_column, same_every_col)
         for row in range(self.offset+1, compilation_sheet.max_row+1):
             cell_value = f"="
             for month_col in month_columns:
                 cell_value += f"+ {get_column_letter(month_col)}{row}"
-            self.write_to_cell(compilation_sheet, row, sum_col, cell_value, self.font_small_bold, style=True)
-        self.write_to_cell(compilation_sheet, self.offset, compilation_sheet.max_column, "Sum:", self.font_bold, style=False)
+            self.write_to_cell(compilation_sheet, row, compilation_sheet.max_column, cell_value, self.font_small_bold, style=True)
 
         self.make_sum_rows(compilation_sheet, same_every_col)
         self.style_sheet(compilation_sheet, same_every_col)
