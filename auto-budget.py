@@ -176,6 +176,7 @@ class AutoBudget():
                     if actual_cost:
                         self.write_to_cell(compilation_sheet, existing_cost_types.get(cost_type), i_col + offset_individual, actual_cost, self.font_standard, style=True)
 
+
         # Differential Actual-Planned
         col = self.offset + 3
         self.write_to_cell(compilation_sheet, self.offset, col, "Diff", self.font_small_bold)
@@ -185,6 +186,16 @@ class AutoBudget():
                 actual_col_letter = get_column_letter(i_col-2)
                 self.write_to_cell(compilation_sheet, i_row, i_col, f"={budget_col_letter}{i_row}-{actual_col_letter}{i_row}", self.font_standard, style=True)
         
+
+        # Add a sum of months for each row
+        self.write_to_cell(compilation_sheet, self.offset, compilation_sheet.max_column + 1, "Sum:", self.font_bold, style=False)
+        month_columns = range(self.offset+1, compilation_sheet.max_column, same_every_col)
+        for row in range(self.offset+1, compilation_sheet.max_row+1):
+            cell_value = f"="
+            for month_col in month_columns:
+                cell_value += f"+ {get_column_letter(month_col)}{row}"
+            self.write_to_cell(compilation_sheet, row, compilation_sheet.max_column, cell_value, self.font_small_bold, style=True)
+
         self.make_sum_rows(compilation_sheet, same_every_col)
         self.style_sheet(compilation_sheet, same_every_col)
 
@@ -192,7 +203,7 @@ class AutoBudget():
         # Sum all columns
         row_total = sheet.max_row+2
         self.write_to_cell(sheet, row_total, self.offset, "Totalt", self.font_small_bold)
-        for col in range(self.offset+1,sheet.max_column+1):
+        for col in range(self.offset+1,sheet.max_column):
             column_letter = get_column_letter(col)
             self.write_to_cell(sheet, row_total, col, f"=SUM({column_letter}{2}:{column_letter}{row_total-2})", self.font_small_bold, style=True)
 
@@ -289,6 +300,8 @@ class AutoBudget():
             if column_index == self.offset:
                 # Decide this color later
                 pass
+            elif column_index == sheet.max_column:
+                pass
             elif column_index > self.offset:
                 if (column_index - self.offset -1)%same_every_col == 0:
                     color += 1
@@ -321,7 +334,7 @@ class AutoBudget():
         # Hide columns
         sheet.sheet_properties.outlinePr.summaryRight = False
         for i in range(same_every_col-1): # Grouping several at once does not work, but one at a time works
-            for col in range(self.offset+2+i, sheet.max_column + 1, same_every_col):
+            for col in range(self.offset+2+i, sheet.max_column, same_every_col):
                 sheet.column_dimensions.group(get_column_letter(col), get_column_letter(col), hidden=True) 
 
         # Size columns
