@@ -15,6 +15,7 @@ class AutoBudget():
         self.workbook = openpyxl.Workbook() # Create workbook
         self.cost_center_set = set()
         self.budget_dict = self.load_budgets(input_dir_path)
+        self.cost_types = {}
 
         # Styles
         self.font_bold = Font(name='Arial', bold=True, size=13)
@@ -28,28 +29,10 @@ class AutoBudget():
         self.color_blue_3 = PatternFill(fgColor='e4e6ec', fill_type='solid')
 
         self.border_thin = Border(
-            left=Side(border_style='thin', color='CDCDCD'), 
-            right=Side(border_style='thin', color='CDCDCD'),
-            top=Side(border_style='thin', color='CDCDCD'),
-            bottom=Side(border_style='thin', color='CDCDCD')
-            )
-        self.border_thick_right = Border(
-            left=Side(border_style='thin', color='CDCDCD'), 
-            right=Side(border_style='thick', color='000000'),
-            top=Side(border_style='thin', color='CDCDCD'),
-            bottom=Side(border_style='thin', color='CDCDCD')
-            )
-        self.border_thick_bottom = Border(
-            left=Side(border_style='thin', color='CDCDCD'), 
-            right=Side(border_style='thin', color='CDCDCD'),
-            top=Side(border_style='thin', color='CDCDCD'),
-            bottom=Side(border_style='thick', color='000000')
-            )
-        self.border_thick_double = Border(
-            left=Side(border_style='thin', color='CDCDCD'), 
-            right=Side(border_style='thick', color='000000'),
-            top=Side(border_style='thin', color='CDCDCD'),
-            bottom=Side(border_style='thick', color='000000')
+            left=Side(border_style='dotted', color='000000'), 
+            #right=Side(border_style='thin', color='CDCDCD'),
+            top=Side(border_style='dotted', color='000000'),
+            #bottom=Side(border_style='thin', color='CDCDCD')
             )
 
         self.month_header = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -149,7 +132,6 @@ class AutoBudget():
         self.write_to_cell(compilation_sheet, self.offset, self.offset, compilation_sheet.title, self.font_bold)
 
         # Add costs and cost types to worksheet
-        existing_cost_types = {}
         for date, cost_center_list in self.budget_dict.items():
             i_col = (int(date[:3])-1)*same_every_col + self.offset+1
             self.year = date[3:]
@@ -157,18 +139,18 @@ class AutoBudget():
             # Actual & cost types
             month_cost_dict_actual = self.sum_month(cost_center_list, 0)
             for cost_type, cost in month_cost_dict_actual.items():
-                if cost_type in existing_cost_types.keys():
-                    self.write_to_cell(compilation_sheet, existing_cost_types.get(cost_type), i_col, cost, self.font_standard, style=True)
+                if cost_type in self.cost_types.keys():
+                    self.write_to_cell(compilation_sheet, self.cost_types.get(cost_type), i_col, cost, self.font_standard, style=True)
                 else:
                     i_row = compilation_sheet.max_row + 1
                     self.write_to_cell(compilation_sheet, i_row, self.offset, cost_type, self.font_standard) # Add cost type
-                    existing_cost_types[cost_type] = i_row
+                    self.cost_types[cost_type] = i_row
                     self.write_to_cell(compilation_sheet, i_row, i_col, cost, self.font_standard, style=True)
 
             # Planned
             month_cost_dict_planned = self.sum_month(cost_center_list, 1)
             for cost_type, cost in month_cost_dict_planned.items():
-                self.write_to_cell(compilation_sheet, existing_cost_types.get(cost_type), i_col+1, cost, self.font_standard, style=True)
+                self.write_to_cell(compilation_sheet, self.cost_types.get(cost_type), i_col+1, cost, self.font_standard, style=True)
 
             # Add cost for individual cost centers
             cost_center_list = sorted(cost_center_list, key=itemgetter('id'))
@@ -178,7 +160,7 @@ class AutoBudget():
                 for cost_type, row in cost_center_dict[cost_center_dict['id']].iterrows():
                     actual_cost = row[0]
                     if actual_cost:
-                        self.write_to_cell(compilation_sheet, existing_cost_types.get(cost_type), i_col + offset_individual, actual_cost, self.font_standard, style=True)
+                        self.write_to_cell(compilation_sheet, self.cost_types.get(cost_type), i_col + offset_individual, actual_cost, self.font_standard, style=True)
 
 
         # Differential Actual-Planned
@@ -319,13 +301,15 @@ class AutoBudget():
         for col in range(self.offset, sheet.max_column + 1):
             for row in range(self.offset, sheet.max_row + 1):
                 sheet.cell(row, col).border = self.border_thin
-                if col ==  self.offset and row == self.offset:
-                    sheet.cell(row, col).border = self.border_thick_double
-                elif col == self.offset:
-                    sheet.cell(row, col).border = self.border_thick_right
-                elif row == self.offset:
-                    sheet.cell(row, col).border = self.border_thick_bottom
-        self.set_thick_border(sheet, self.offset, self.offset, sheet.max_row, sheet.max_column)
+
+        # Upper rows
+        self.set_thick_border(sheet, self.offset, self.offset, self.offset+len(self.cost_types.keys()), self.offset)
+        self.set_thick_border(sheet, self.offset, self.offset+1, self.offset+len(self.cost_types.keys()), sheet.max_column-1)
+        self.set_thick_border(sheet, self.offset, sheet.max_column, self.offset+len(self.cost_types.keys()), sheet.max_column)
+        # Lower rows
+        self.set_thick_border(sheet, self.offset+len(self.cost_types.keys())+1, self.offset, sheet.max_row, self.offset)
+        self.set_thick_border(sheet, self.offset+len(self.cost_types.keys())+1, self.offset+1, sheet.max_row, sheet.max_column-1)
+        self.set_thick_border(sheet, self.offset+len(self.cost_types.keys())+1, sheet.max_column, sheet.max_row, sheet.max_column)
 
         # Hide columns
         sheet.sheet_properties.outlinePr.summaryRight = False
@@ -342,7 +326,7 @@ class AutoBudget():
 if __name__ == "__main__":
 
     print("Hello, I am your budget automator")
-    budget = AutoBudget("./dummydata/") # If you want to run with dummydata
-    #budget = AutoBudget("./data/")     # If you want to run with data
+    #budget = AutoBudget("./dummydata/") # If you want to run with dummydata
+    budget = AutoBudget("./data/")     # If you want to run with data
     budget.make_compilation()
     budget.workbook.save("Sammanställning.xlsx")
