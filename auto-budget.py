@@ -301,20 +301,19 @@ class AutoBudget():
         color_2 = [self.color_blue_2, self.color_yellow_2]
         color_3 = [self.color_blue_3, self.color_yellow_3]
         i_color = 1
-        for i_col in range(1, sheet.max_column):
+        for i_col in range(self.offset, sheet.max_column):
             column_header = sheet.cell(self.offset, i_col).value
             if column_header in self.month_header:
                 i_color += 1
-            for i_row in range(1, sheet.max_row + 1):
-                if i_row >= self.offset:
-                    if i_col == self.offset:
-                        pass
-                    elif column_header in self.month_header:
-                        sheet.cell(i_row, i_col).fill = color_1[i_color%2]
-                    elif column_header in self.column_standard_header:
-                        sheet.cell(i_row, i_col).fill = color_2[i_color%2]
-                    else:
-                        sheet.cell(i_row, i_col).fill = color_3[i_color%2]
+            for i_row in range(self.offset, sheet.max_row + 1):
+                if i_col == self.offset:
+                    pass
+                elif column_header in self.month_header:
+                    sheet.cell(i_row, i_col).fill = color_1[i_color%2]
+                elif column_header in self.column_standard_header:
+                    sheet.cell(i_row, i_col).fill = color_2[i_color%2]
+                else:
+                    sheet.cell(i_row, i_col).fill = color_3[i_color%2]
 
         # Set column borders
         for col in range(self.offset, sheet.max_column + 1):
