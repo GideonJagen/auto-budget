@@ -1,7 +1,7 @@
 import os
 import openpyxl
 from openpyxl import styles # Could not use openpyxl to load data as the budget reports is of .xls format
-from openpyxl.styles import Font, PatternFill, Border, Side
+from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
 from openpyxl.utils import get_column_letter
 import xlrd
 import pandas as pd
@@ -115,6 +115,7 @@ class AutoBudget():
         sheet.cell(row, col, value).font = font
         if style:
             sheet.cell(row, col).style = 'Comma [0]'
+            sheet.cell(row, col).alignment = Alignment(horizontal="right")
     
     # Sum different costs based on actual cost
     # pos: cost = 0 budget = 1 
@@ -300,20 +301,19 @@ class AutoBudget():
         color_2 = [self.color_blue_2, self.color_yellow_2]
         color_3 = [self.color_blue_3, self.color_yellow_3]
         i_color = 1
-        for i_col in range(1, sheet.max_column):
+        for i_col in range(self.offset, sheet.max_column):
             column_header = sheet.cell(self.offset, i_col).value
             if column_header in self.month_header:
                 i_color += 1
-            for i_row in range(1, sheet.max_row + 1):
-                if i_row >= self.offset:
-                    if i_col == self.offset:
-                        pass
-                    elif column_header in self.month_header:
-                        sheet.cell(i_row, i_col).fill = color_1[i_color%2]
-                    elif column_header in self.column_standard_header:
-                        sheet.cell(i_row, i_col).fill = color_2[i_color%2]
-                    else:
-                        sheet.cell(i_row, i_col).fill = color_3[i_color%2]
+            for i_row in range(self.offset, sheet.max_row + 1):
+                if i_col == self.offset:
+                    pass
+                elif column_header in self.month_header:
+                    sheet.cell(i_row, i_col).fill = color_1[i_color%2]
+                elif column_header in self.column_standard_header:
+                    sheet.cell(i_row, i_col).fill = color_2[i_color%2]
+                else:
+                    sheet.cell(i_row, i_col).fill = color_3[i_color%2]
 
         # Set column borders
         for col in range(self.offset, sheet.max_column + 1):
