@@ -1,7 +1,7 @@
 import os
 import openpyxl
 from openpyxl import styles # Could not use openpyxl to load data as the budget reports is of .xls format
-from openpyxl.styles import Font, PatternFill, Border, Side
+from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
 from openpyxl.utils import get_column_letter
 import xlrd
 import pandas as pd
@@ -115,6 +115,7 @@ class AutoBudget():
         sheet.cell(row, col, value).font = font
         if style:
             sheet.cell(row, col).style = 'Comma [0]'
+            sheet.cell(row, col).alignment = Alignment(horizontal="right")
     
     # Sum different costs based on actual cost
     # pos: cost = 0 budget = 1 
