@@ -120,16 +120,9 @@ class AutoBudget():
         compilation_sheet = self.workbook.active
         compilation_sheet.title = "Sammanställning Kostnadsslag"
         same_every_col = len(self.cost_center_set)+len(self.column_standard_header)
-
-        # Add standard headers to worksheet
-        for i in range(len(self.month_header)):
-            self.write_to_cell(compilation_sheet, self.offset, i*same_every_col+self.offset+1, self.month_header[i], self.font_bold)
-            self.write_to_cell(compilation_sheet, self.offset, i*same_every_col+self.offset+2, self.column_standard_header[1], self.font_small_bold)
-            self.write_to_cell(compilation_sheet, self.offset, i*same_every_col+self.offset+3, self.column_standard_header[2], self.font_small_bold)
         
-
-        # Add title to worksheet
-        self.write_to_cell(compilation_sheet, self.offset, self.offset, compilation_sheet.title, self.font_bold)
+        # Column headers
+        self.add_column_headers(compilation_sheet, same_every_col)
 
         # Add costs and cost types to worksheet
         for date, cost_center_list in self.budget_dict.items():
@@ -156,7 +149,6 @@ class AutoBudget():
             cost_center_list = sorted(cost_center_list, key=itemgetter('id'))
             for i, cost_center_dict in enumerate(cost_center_list):
                 offset_individual = i + len(self.column_standard_header)
-                self.write_to_cell(compilation_sheet, self.offset, i_col + offset_individual, cost_center_dict['id'], self.font_standard)
                 for cost_type, row in cost_center_dict[cost_center_dict['id']].iterrows():
                     actual_cost = row[0]
                     if actual_cost:
@@ -178,7 +170,6 @@ class AutoBudget():
         
 
         # Add a sum of months for each row
-        self.write_to_cell(compilation_sheet, self.offset, compilation_sheet.max_column + 1, "Sum:", self.font_bold, style=False)
         month_columns = range(self.offset+1, compilation_sheet.max_column, same_every_col)
         for row in range(self.offset+1, compilation_sheet.max_row+1):
             cell_value = f"="
@@ -188,6 +179,25 @@ class AutoBudget():
 
         self.make_sum_rows(compilation_sheet, same_every_col)
         self.style_sheet(compilation_sheet, same_every_col)
+
+    def add_column_headers(self, sheet, same_every_col):
+        # Add title to table
+        self.write_to_cell(sheet, self.offset, self.offset, sheet.title, self.font_bold)
+
+        # Add standard headers to worksheet
+        for i in range(len(self.month_header)):
+            i_col =  i*same_every_col+self.offset+1
+            self.write_to_cell(sheet, self.offset, i_col, self.month_header[i], self.font_bold)
+            i_col +=1
+            self.write_to_cell(sheet, self.offset, i_col, self.column_standard_header[1], self.font_small_bold)
+            i_col +=1
+            self.write_to_cell(sheet, self.offset, i_col, self.column_standard_header[2], self.font_small_bold)
+            for cost_center in sorted(self.cost_center_set):
+                i_col +=1
+                self.write_to_cell(sheet, self.offset, i_col, cost_center, self.font_small_bold)
+        
+        # Add Sum title in end
+        self.write_to_cell(sheet, self.offset, sheet.max_column + 1, "Sum:", self.font_bold, style=False)
 
     def make_sum_rows(self, sheet, same_every_col):
         # Sum all columns
@@ -210,14 +220,14 @@ class AutoBudget():
         # Move budget sums
         row = sheet.max_row+1
         self.write_to_cell(sheet, row, self.offset, "Totalt Budget", self.font_small_bold)
-        for col in range(self.offset+2, sheet.max_column+1, same_every_col):
+        for col in range(self.offset+2, sheet.max_column, same_every_col):
             budget_sum = sheet.cell(row_total, col).value
             self.write_to_cell(sheet, row_total, col, "-", self.font_standard, style=True)
             if ('00'+str(int((col-self.offset)/same_every_col+1))+self.year) in self.budget_dict.keys():
                 self.write_to_cell(sheet, row, col-1, budget_sum, self.font_small_bold, style=True)
             else:
                 self.write_to_cell(sheet, row, col-1, f"=MEDIAN({get_column_letter(self.offset+1)}{row}:{get_column_letter(col-2)}{row})", self.font_small_bold, style=True)
-
+        
         # Accumulation of budgets
         row = sheet.max_row+1
         self.write_to_cell(sheet, row, self.offset, "Budget (ACC)", self.font_small_bold)
@@ -227,11 +237,11 @@ class AutoBudget():
                 self.write_to_cell(sheet, row, col, f"=SUM({column_letter}{row-1}+0)", self.font_small_bold, style=True)
             else:
                 self.write_to_cell(sheet, row, col, f"=SUM({column_letter}{row-1}+{get_column_letter(col-same_every_col)}{row})", self.font_small_bold, style=True)
-
+        
         # Differential row
         row = sheet.max_row+1
         self.write_to_cell(sheet, row, self.offset, "Diff", self.font_small_bold)
-        for col in range(self.offset+1, sheet.max_column+1, same_every_col):
+        for col in range(self.offset+1, sheet.max_column, same_every_col):
             column_letter = get_column_letter(col)
             self.write_to_cell(sheet, row, col, f"={column_letter}{row-2} - {column_letter}{row-4}", self.font_small_bold, style=True)
 
