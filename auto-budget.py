@@ -162,6 +162,11 @@ class AutoBudget():
                     if actual_cost:
                         self.write_to_cell(compilation_sheet, self.cost_types.get(cost_type), i_col + offset_individual, actual_cost, self.font_standard, style=True)
 
+        # Fill in blank cells
+        for i_col in range(self.offset + 1, compilation_sheet.max_column):
+            for i_row in range(self.offset + 1, compilation_sheet.max_row + 1):
+                if not compilation_sheet.cell(i_row, i_col).value:
+                    self.write_to_cell(compilation_sheet, i_row, i_col, 0, self.font_standard, style=True)
 
         # Differential Actual-Planned
         col = self.offset + 3
