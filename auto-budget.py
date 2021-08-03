@@ -211,7 +211,7 @@ class AutoBudget():
         # Accumulation of sums
         row = sheet.max_row+1
         self.write_to_cell(sheet, row, self.offset, "Totalt (ACC)", self.font_small_bold)
-        for col in range(self.offset+1, sheet.max_column+1, same_every_col):
+        for col in range(self.offset+1, sheet.max_column, same_every_col):
             column_letter = get_column_letter(col)
             if col == self.offset+1:
                 self.write_to_cell(sheet, row, col, f"=SUM({column_letter}{row-1}+0)", self.font_small_bold, style=True)
@@ -232,7 +232,7 @@ class AutoBudget():
         # Accumulation of budgets
         row = sheet.max_row+1
         self.write_to_cell(sheet, row, self.offset, "Budget (ACC)", self.font_small_bold)
-        for col in range(self.offset+1, sheet.max_column+1, same_every_col):
+        for col in range(self.offset+1, sheet.max_column, same_every_col):
             column_letter = get_column_letter(col)
             if col == self.offset+1:
                 self.write_to_cell(sheet, row, col, f"=SUM({column_letter}{row-1}+0)", self.font_small_bold, style=True)
@@ -252,7 +252,7 @@ class AutoBudget():
         # Differential (ACC) row 
         row = sheet.max_row+1
         self.write_to_cell(sheet, row, self.offset, "Diff (ACC)", self.font_small_bold)
-        for col in range(self.offset+1, sheet.max_column+1, same_every_col):
+        for col in range(self.offset+1, sheet.max_column, same_every_col):
             column_letter = get_column_letter(col)
             self.write_to_cell(sheet, row, col, f"={column_letter}{row-2} - {column_letter}{row-4}", self.font_small_bold, style=True)
                 
