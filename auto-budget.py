@@ -7,6 +7,7 @@ import xlrd
 import pandas as pd
 from pathlib import Path
 from operator import itemgetter
+from datetime import date
 
 class AutoBudget():
 
@@ -118,7 +119,7 @@ class AutoBudget():
 
     def make_compilation(self):
         compilation_sheet = self.workbook.active
-        compilation_sheet.title = "Sammanställning Kostnadsslag"
+        compilation_sheet.title = " "
         same_every_col = len(self.cost_center_set)+len(self.column_standard_header)
         
         # Column headers
@@ -203,24 +204,14 @@ class AutoBudget():
     def make_sum_rows(self, sheet, same_every_col):
         # Sum all columns
         row_total = sheet.max_row+2
-        self.write_to_cell(sheet, row_total, self.offset, "Totalt", self.font_small_bold)
+        self.write_to_cell(sheet, row_total, self.offset, "Cost", self.font_small_bold)
         for col in range(self.offset+1,sheet.max_column):
             column_letter = get_column_letter(col)
             self.write_to_cell(sheet, row_total, col, f"=SUM({column_letter}{2}:{column_letter}{row_total-2})", self.font_small_bold, style=True)
-
-        # Accumulation of sums
-        row = sheet.max_row+1
-        self.write_to_cell(sheet, row, self.offset, "Totalt (ACC)", self.font_small_bold)
-        for col in range(self.offset+1, sheet.max_column, same_every_col):
-            column_letter = get_column_letter(col)
-            if col == self.offset+1:
-                self.write_to_cell(sheet, row, col, f"=SUM({column_letter}{row-1}+0)", self.font_small_bold, style=True)
-            else:
-                self.write_to_cell(sheet, row, col, f"=SUM({column_letter}{row-1}+{get_column_letter(col-same_every_col)}{row})", self.font_small_bold, style=True)
         
         # Move budget sums
         row = sheet.max_row+1
-        self.write_to_cell(sheet, row, self.offset, "Totalt Budget", self.font_small_bold)
+        self.write_to_cell(sheet, row, self.offset, "Budget", self.font_small_bold)
         for col in range(self.offset+2, sheet.max_column, same_every_col):
             budget_sum = sheet.cell(row_total, col).value
             self.write_to_cell(sheet, row_total, col, "-", self.font_standard, style=True)
@@ -228,6 +219,16 @@ class AutoBudget():
                 self.write_to_cell(sheet, row, col-1, budget_sum, self.font_small_bold, style=True)
             else:
                 self.write_to_cell(sheet, row, col-1, f"=MEDIAN({get_column_letter(self.offset+1)}{row}:{get_column_letter(col-2)}{row})", self.font_small_bold, style=True)
+
+        # Accumulation of sums
+        row = sheet.max_row+1
+        self.write_to_cell(sheet, row, self.offset, "Cost (ACC)", self.font_small_bold)
+        for col in range(self.offset+1, sheet.max_column, same_every_col):
+            column_letter = get_column_letter(col)
+            if col == self.offset+1:
+                self.write_to_cell(sheet, row, col, f"=SUM({column_letter}{row-2}+0)", self.font_small_bold, style=True)
+            else:
+                self.write_to_cell(sheet, row, col, f"=SUM({column_letter}{row-2}+{get_column_letter(col-same_every_col)}{row})", self.font_small_bold, style=True)
         
         # Accumulation of budgets
         row = sheet.max_row+1
@@ -235,16 +236,16 @@ class AutoBudget():
         for col in range(self.offset+1, sheet.max_column, same_every_col):
             column_letter = get_column_letter(col)
             if col == self.offset+1:
-                self.write_to_cell(sheet, row, col, f"=SUM({column_letter}{row-1}+0)", self.font_small_bold, style=True)
+                self.write_to_cell(sheet, row, col, f"=SUM({column_letter}{row-2}+0)", self.font_small_bold, style=True)
             else:
-                self.write_to_cell(sheet, row, col, f"=SUM({column_letter}{row-1}+{get_column_letter(col-same_every_col)}{row})", self.font_small_bold, style=True)
+                self.write_to_cell(sheet, row, col, f"=SUM({column_letter}{row-2}+{get_column_letter(col-same_every_col)}{row})", self.font_small_bold, style=True)
         
         # Differential row
         row = sheet.max_row+1
         self.write_to_cell(sheet, row, self.offset, "Diff", self.font_small_bold)
         for col in range(self.offset+1, sheet.max_column, same_every_col):
             column_letter = get_column_letter(col)
-            self.write_to_cell(sheet, row, col, f"={column_letter}{row-2} - {column_letter}{row-4}", self.font_small_bold, style=True)
+            self.write_to_cell(sheet, row, col, f"={column_letter}{row-3} - {column_letter}{row-4}", self.font_small_bold, style=True)
 
             # Delete total duplicate in diff column
             self.write_to_cell(sheet, row_total, col + 2, "-", self.font_standard, style=True)
@@ -254,7 +255,7 @@ class AutoBudget():
         self.write_to_cell(sheet, row, self.offset, "Diff (ACC)", self.font_small_bold)
         for col in range(self.offset+1, sheet.max_column, same_every_col):
             column_letter = get_column_letter(col)
-            self.write_to_cell(sheet, row, col, f"={column_letter}{row-2} - {column_letter}{row-4}", self.font_small_bold, style=True)
+            self.write_to_cell(sheet, row, col, f"={column_letter}{row-2} - {column_letter}{row-3}", self.font_small_bold, style=True)
                 
 
 #------------------------------------------------------------------------------------------------------------
@@ -345,4 +346,4 @@ if __name__ == "__main__":
     #budget = AutoBudget("./dummydata/") # If you want to run with dummydata
     budget = AutoBudget("./data/")     # If you want to run with data
     budget.make_compilation()
-    budget.workbook.save("Sammanställning.xlsx")
+    budget.workbook.save(f"Cost Report Summary {date.today()}.xlsx")
