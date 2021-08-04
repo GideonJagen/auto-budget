@@ -276,7 +276,7 @@ class AutoBudget():
         for column in columnrange:
             column_cells = [c for c in ws.columns][column-1]
             if not length:
-                length = max(len(str(cell.value))*0.87 for cell in column_cells)
+                length = max(len(str(cell.value))*1.05 for cell in column_cells) # Libre Office: *0.87, Microsoft Excel: *1.05
             ws.column_dimensions[column_cells[0].column_letter].width = length
 
     #Set thich border around given range
@@ -346,7 +346,7 @@ class AutoBudget():
 
         # Size columns
         self.autosize_column(sheet, [self.offset])
-        self.autosize_column(sheet, range(self.offset + 1, sheet.max_column + 1), 10)
+        self.autosize_column(sheet, range(self.offset + 1, sheet.max_column + 1), 11)
 
 
 
