@@ -63,7 +63,7 @@ class AutoBudget():
                     elif info_cost_elemnt == "Table":
                         start_of_table = index + 1
                     elif info_cost_elemnt == "HSQVBI_CCTR_GR":
-                        end_of_table = index - 1
+                        end_of_table = index
 
                 # Make table array
                 table = [cost_report.row_values(row) for row in range(start_of_table, end_of_table)]
@@ -149,19 +149,10 @@ class AutoBudget():
             cost_center_list = sorted(cost_center_list, key=itemgetter('id'))
             for i, cost_center_dict in enumerate(cost_center_list):
                 offset_individual = i + len(self.column_standard_header)
-                i_col_individual = i_col + offset_individual
-                cost_center = cost_center_dict['id']
-
-                # Check that cost is ending up in the right place
-                header_value = compilation_sheet.cell(self.offset, i_col_individual).value
-                if not cost_center == header_value:
-                    raise Exception(f"The cost center in header is {header_value}. The cost center for the data is {cost_center}.")
-                
-                # Add cost for all cost types
-                for cost_type, row in cost_center_dict[cost_center].iterrows():
+                for cost_type, row in cost_center_dict[cost_center_dict['id']].iterrows():
                     actual_cost = row[0]
                     if actual_cost:
-                        self.write_to_cell(compilation_sheet, self.cost_types.get(cost_type), i_col_individual, actual_cost, self.font_standard, style=True)
+                        self.write_to_cell(compilation_sheet, self.cost_types.get(cost_type), i_col + offset_individual, actual_cost, self.font_standard, style=True)
 
         # Fill in blank cells
         months_with_data = len(self.budget_dict)
