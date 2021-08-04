@@ -14,7 +14,7 @@ class AutoBudget():
     def __init__(self, input_dir_path) -> None:
         # Init
         self.workbook = openpyxl.Workbook() # Create workbook
-        self.cost_center_set = set()
+        self.cost_center_list = []
         self.budget_dict = self.load_budgets(input_dir_path)
         self.cost_types = {}
 
@@ -87,7 +87,10 @@ class AutoBudget():
                     raise Exception(f"cost center {cost_center} has a dublicate with the date {date}, please remove it!")
                 budget_dict[date].append({cost_center : table_df, 'id' : cost_center})
                 doublet_check_list.append(check)
-                self.cost_center_set.add(cost_center)
+                if cost_center not in self.cost_center_list:
+                    self.cost_center_list.append(cost_center)
+        
+        self.cost_center_list = sorted(self.cost_center_list)
 
         return budget_dict
 
@@ -103,9 +106,9 @@ class AutoBudget():
     
     # Sum different costs based on actual cost
     # pos: cost = 0 budget = 1 
-    def sum_month(self, cost_center_list, pos) -> dict:
+    def sum_month(self, cost_center_dict_list, pos) -> dict:
         month_dict = {}
-        for dict in cost_center_list:
+        for dict in cost_center_dict_list:
             df = list(dict.values())[0]
             for index, row in df.iterrows():
                 cost = row[pos]
@@ -120,18 +123,18 @@ class AutoBudget():
     def make_compilation(self):
         compilation_sheet = self.workbook.active
         compilation_sheet.title = "Summary Sheet"
-        same_every_col = len(self.cost_center_set)+len(self.column_standard_header)
+        same_every_col = len(self.cost_center_list)+len(self.column_standard_header)
         
         # Column headers
         self.add_column_headers(compilation_sheet, same_every_col)
 
         # Add costs and cost types to worksheet
-        for date, cost_center_list in self.budget_dict.items():
+        for date, cost_center_dict_list in self.budget_dict.items():
             i_col = (int(date[:3])-1)*same_every_col + self.offset+1
             self.year = date[3:]
 
             # Actual & cost types
-            month_cost_dict_actual = self.sum_month(cost_center_list, 0)
+            month_cost_dict_actual = self.sum_month(cost_center_dict_list, 0)
             for cost_type, cost in month_cost_dict_actual.items():
                 if cost_type in self.cost_types.keys():
                     self.write_to_cell(compilation_sheet, self.cost_types.get(cost_type), i_col, cost, self.font_standard, style=True)
@@ -142,18 +145,17 @@ class AutoBudget():
                     self.write_to_cell(compilation_sheet, i_row, i_col, cost, self.font_standard, style=True)
 
             # Planned
-            month_cost_dict_planned = self.sum_month(cost_center_list, 1)
+            month_cost_dict_planned = self.sum_month(cost_center_dict_list, 1)
             for cost_type, cost in month_cost_dict_planned.items():
                 self.write_to_cell(compilation_sheet, self.cost_types.get(cost_type), i_col+1, cost, self.font_standard, style=True)
 
             # Add cost for individual cost centers
-            cost_center_list = sorted(cost_center_list, key=itemgetter('id'))
-            for i, cost_center_dict in enumerate(cost_center_list):
-                offset_individual = i + len(self.column_standard_header)
-
-                i_col_individual = i_col + offset_individual
+            cost_center_dict_list = sorted(cost_center_dict_list, key=itemgetter('id'))
+            for i, cost_center_dict in enumerate(cost_center_dict_list):
                 cost_center = cost_center_dict['id']
-
+                offset_individual = len(self.column_standard_header) + self.cost_center_list.index(cost_center)
+                i_col_individual = i_col + offset_individual
+                
                 # Check that cost is ending up in the right place
                 header_value = compilation_sheet.cell(self.offset, i_col_individual).value
                 if not cost_center == header_value:
@@ -204,7 +206,7 @@ class AutoBudget():
             self.write_to_cell(sheet, self.offset, i_col, self.column_standard_header[1], self.font_small_bold)
             i_col +=1
             self.write_to_cell(sheet, self.offset, i_col, self.column_standard_header[2], self.font_small_bold)
-            for cost_center in sorted(self.cost_center_set):
+            for cost_center in sorted(self.cost_center_list):
                 i_col +=1
                 self.write_to_cell(sheet, self.offset, i_col, cost_center, self.font_small_bold)
         
