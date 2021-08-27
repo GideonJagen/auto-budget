@@ -117,7 +117,7 @@ class AutoBudget:
     #           Write Data
     # ------------------------------------------------------------------------------------------------------------
 
-    def write_to_cell(self, sheet, row, col, value, font, style=False):
+    def write_to_cell(self, sheet, row, col, value, font, style=False) -> None:
         sheet.cell(row, col, value).font = font
         if style:
             sheet.cell(row, col).style = "Comma [0]"
@@ -139,7 +139,7 @@ class AutoBudget:
                     month_dict[index] += float(cost)
         return month_dict
 
-    def make_compilation(self):
+    def make_compilation(self) -> None:
         compilation_sheet = self.workbook.active
         compilation_sheet.title = "Summary Sheet"
         same_every_col = len(self.cost_center_list) + len(self.column_standard_header)
@@ -277,7 +277,7 @@ class AutoBudget:
         self.make_sum_rows(compilation_sheet, same_every_col)
         self.style_sheet(compilation_sheet, same_every_col)
 
-    def add_column_headers(self, sheet, same_every_col):
+    def add_column_headers(self, sheet, same_every_col) -> None:
         # Add title to table
         # self.write_to_cell(sheet, self.offset, self.offset, sheet.title, self.font_bold)
 
@@ -319,7 +319,7 @@ class AutoBudget:
             style=False,
         )
 
-    def make_sum_rows(self, sheet, same_every_col):
+    def make_sum_rows(self, sheet, same_every_col) -> None:
         # Sum all columns
         row_total = sheet.max_row + 2
         self.write_to_cell(sheet, row_total, self.offset, "Cost", self.font_small_bold)
@@ -445,7 +445,7 @@ class AutoBudget:
     #           Fix style
     # ------------------------------------------------------------------------------------------------------------
 
-    def autosize_column(self, ws, columnrange, length=0):
+    def autosize_column(self, ws, columnrange, length=0) -> None:
         for column in columnrange:
             column_cells = [c for c in ws.columns][column - 1]
             if not length:
@@ -479,7 +479,7 @@ class AutoBudget:
                 if pos_x == 0 or pos_x == max_x or pos_y == 0 or pos_y == max_y:
                     cell.border = BORDER
 
-    def style_sheet(self, sheet, same_every_col):
+    def style_sheet(self, sheet, same_every_col) -> None:
         # Set column colors
         color_1 = [self.color_blue_1, self.color_yellow_1]
         color_2 = [self.color_blue_2, self.color_yellow_2]
