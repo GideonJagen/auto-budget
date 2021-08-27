@@ -1,5 +1,6 @@
 import os
 import openpyxl
+from openpyxl.descriptors.base import String
 from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
 from openpyxl.utils import get_column_letter
 import xlrd
@@ -52,6 +53,12 @@ class AutoBudget:
         self.column_standard_header = ["Month", "Budget", "Diff"]
         self.offset = 2  # Offset from 0 where table begins
         self.year = ""
+
+    def get_cost_centers(self) -> String:
+        cost_centers = ""
+        for cost_center in self.cost_center_list:
+            cost_centers += cost_center + " "
+        return cost_centers
 
     # ------------------------------------------------------------------------------------------------------------
     #           Load Data
@@ -570,4 +577,6 @@ if __name__ == "__main__":
     # budget = AutoBudget("./dummydata/") # If you want to run with dummydata
     budget = AutoBudget("./data/")  # If you want to run with data
     budget.make_compilation()
-    budget.workbook.save(f"Cost Report Summary {date.today()}.xlsx")
+    budget.workbook.save(
+        f"Cost Report Summary {date.today()} ({budget.get_cost_centers()}).xlsx"
+    )
