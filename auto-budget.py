@@ -1,3 +1,4 @@
+import dataclasses
 import os
 import openpyxl
 from openpyxl.descriptors.base import String
@@ -8,6 +9,28 @@ import pandas as pd
 from pathlib import Path
 from operator import itemgetter
 from datetime import date
+from dataclasses import dataclass
+
+
+@dataclass
+class Style:
+    # Styles
+    FONT_BIG_BOLD = Font(name="Arial", bold=True, size=13)
+    FONT_SMALL_BOLD = Font(name="Arial", bold=True, size=11)
+    FONT_STANDARD = Font(name="Arial")
+    COLOR_YELLOW_1 = PatternFill(fgColor="e0d8c1", fill_type="solid")
+    COLOR_YELLOW_2 = PatternFill(fgColor="e6e1d2", fill_type="solid")
+    COLOR_YELLOW_3 = PatternFill(fgColor="eceae4", fill_type="solid")
+    COLOR_BLUE_1 = PatternFill(fgColor="c1c9e0", fill_type="solid")
+    COLOR_BLUE_2 = PatternFill(fgColor="d2d7e6", fill_type="solid")
+    COLOR_BLUE_3 = PatternFill(fgColor="e4e6ec", fill_type="solid")
+
+    BORDER_DOTTED = Border(
+        left=Side(border_style="dotted", color="000000"),
+        # right=Side(border_style='thin', color='CDCDCD'),
+        top=Side(border_style="dotted", color="000000"),
+        # bottom=Side(border_style='thin', color='CDCDCD')
+    )
 
 
 class AutoBudget:
@@ -17,24 +40,6 @@ class AutoBudget:
         self.cost_center_list = []
         self.budget_dict = self.load_budgets(input_dir_path)
         self.cost_types = {}
-
-        # Styles
-        self.font_bold = Font(name="Arial", bold=True, size=13)
-        self.font_small_bold = Font(name="Arial", bold=True, size=11)
-        self.font_standard = Font(name="Arial")
-        self.color_yellow_1 = PatternFill(fgColor="e0d8c1", fill_type="solid")
-        self.color_yellow_2 = PatternFill(fgColor="e6e1d2", fill_type="solid")
-        self.color_yellow_3 = PatternFill(fgColor="eceae4", fill_type="solid")
-        self.color_blue_1 = PatternFill(fgColor="c1c9e0", fill_type="solid")
-        self.color_blue_2 = PatternFill(fgColor="d2d7e6", fill_type="solid")
-        self.color_blue_3 = PatternFill(fgColor="e4e6ec", fill_type="solid")
-
-        self.border_thin = Border(
-            left=Side(border_style="dotted", color="000000"),
-            # right=Side(border_style='thin', color='CDCDCD'),
-            top=Side(border_style="dotted", color="000000"),
-            # bottom=Side(border_style='thin', color='CDCDCD')
-        )
 
         self.month_header = [
             "Jan",
@@ -168,7 +173,7 @@ class AutoBudget:
                         self.cost_types.get(cost_type),
                         i_col,
                         cost,
-                        self.font_standard,
+                        Style.FONT_STANDARD,
                         style=True,
                     )
                 else:
@@ -178,7 +183,7 @@ class AutoBudget:
                         i_row,
                         self.offset,
                         cost_type,
-                        self.font_standard,
+                        Style.FONT_STANDARD,
                     )  # Add cost type
                     self.cost_types[cost_type] = i_row
                     self.write_to_cell(
@@ -186,7 +191,7 @@ class AutoBudget:
                         i_row,
                         i_col,
                         cost,
-                        self.font_standard,
+                        Style.FONT_STANDARD,
                         style=True,
                     )
 
@@ -198,7 +203,7 @@ class AutoBudget:
                     self.cost_types.get(cost_type),
                     i_col + 1,
                     cost,
-                    self.font_standard,
+                    Style.FONT_STANDARD,
                     style=True,
                 )
 
@@ -229,7 +234,7 @@ class AutoBudget:
                             self.cost_types.get(cost_type),
                             i_col_individual,
                             actual_cost,
-                            self.font_standard,
+                            Style.FONT_STANDARD,
                             style=True,
                         )
 
@@ -245,7 +250,7 @@ class AutoBudget:
                         i_row,
                         i_col,
                         0,
-                        self.font_standard,
+                        Style.FONT_STANDARD,
                         style=True,
                     )
 
@@ -260,7 +265,7 @@ class AutoBudget:
                     i_row,
                     i_col,
                     f"={budget_col_letter}{i_row}-{actual_col_letter}{i_row}",
-                    self.font_standard,
+                    Style.FONT_STANDARD,
                     style=True,
                 )
 
@@ -277,7 +282,7 @@ class AutoBudget:
                 row,
                 compilation_sheet.max_column,
                 cell_value,
-                self.font_small_bold,
+                Style.FONT_SMALL_BOLD,
                 style=True,
             )
 
@@ -286,13 +291,13 @@ class AutoBudget:
 
     def add_column_headers(self, sheet, same_every_col) -> None:
         # Add title to table
-        # self.write_to_cell(sheet, self.offset, self.offset, sheet.title, self.font_bold)
+        # self.write_to_cell(sheet, self.offset, self.offset, sheet.title, Style.FONT_BIG_BOLD)
 
         # Add standard headers to worksheet
         for i in range(len(self.month_header)):
             i_col = i * same_every_col + self.offset + 1
             self.write_to_cell(
-                sheet, self.offset, i_col, self.month_header[i], self.font_bold
+                sheet, self.offset, i_col, self.month_header[i], Style.FONT_BIG_BOLD
             )
             i_col += 1
             self.write_to_cell(
@@ -300,7 +305,7 @@ class AutoBudget:
                 self.offset,
                 i_col,
                 self.column_standard_header[1],
-                self.font_small_bold,
+                Style.FONT_SMALL_BOLD,
             )
             i_col += 1
             self.write_to_cell(
@@ -308,12 +313,12 @@ class AutoBudget:
                 self.offset,
                 i_col,
                 self.column_standard_header[2],
-                self.font_small_bold,
+                Style.FONT_SMALL_BOLD,
             )
             for cost_center in sorted(self.cost_center_list):
                 i_col += 1
                 self.write_to_cell(
-                    sheet, self.offset, i_col, cost_center, self.font_small_bold
+                    sheet, self.offset, i_col, cost_center, Style.FONT_SMALL_BOLD
                 )
 
         # Add Sum title in end
@@ -322,14 +327,14 @@ class AutoBudget:
             self.offset,
             sheet.max_column + 1,
             "Sum:",
-            self.font_bold,
+            Style.FONT_BIG_BOLD,
             style=False,
         )
 
     def make_sum_rows(self, sheet, same_every_col) -> None:
         # Sum all columns
         row_total = sheet.max_row + 2
-        self.write_to_cell(sheet, row_total, self.offset, "Cost", self.font_small_bold)
+        self.write_to_cell(sheet, row_total, self.offset, "Cost", Style.FONT_SMALL_BOLD)
         for col in range(self.offset + 1, sheet.max_column):
             column_letter = get_column_letter(col)
             self.write_to_cell(
@@ -337,23 +342,23 @@ class AutoBudget:
                 row_total,
                 col,
                 f"=SUM({column_letter}{2}:{column_letter}{row_total-2})",
-                self.font_small_bold,
+                Style.FONT_SMALL_BOLD,
                 style=True,
             )
 
         # Move budget sums
         row = sheet.max_row + 1
-        self.write_to_cell(sheet, row, self.offset, "Budget", self.font_small_bold)
+        self.write_to_cell(sheet, row, self.offset, "Budget", Style.FONT_SMALL_BOLD)
         for col in range(self.offset + 2, sheet.max_column, same_every_col):
             budget_sum = sheet.cell(row_total, col).value
             self.write_to_cell(
-                sheet, row_total, col, "-", self.font_standard, style=True
+                sheet, row_total, col, "-", Style.FONT_STANDARD, style=True
             )
             if (
                 "00" + str(int((col - self.offset) / same_every_col + 1)) + self.year
             ) in self.budget_dict.keys():
                 self.write_to_cell(
-                    sheet, row, col - 1, budget_sum, self.font_small_bold, style=True
+                    sheet, row, col - 1, budget_sum, Style.FONT_SMALL_BOLD, style=True
                 )
             else:
                 self.write_to_cell(
@@ -361,13 +366,13 @@ class AutoBudget:
                     row,
                     col - 1,
                     f"=MEDIAN({get_column_letter(self.offset+1)}{row}:{get_column_letter(col-2)}{row})",
-                    self.font_small_bold,
+                    Style.FONT_SMALL_BOLD,
                     style=True,
                 )
 
         # Accumulation of sums
         row = sheet.max_row + 1
-        self.write_to_cell(sheet, row, self.offset, "Cost (ACC)", self.font_small_bold)
+        self.write_to_cell(sheet, row, self.offset, "Cost (ACC)", Style.FONT_SMALL_BOLD)
         for col in range(self.offset + 1, sheet.max_column, same_every_col):
             column_letter = get_column_letter(col)
             if col == self.offset + 1:
@@ -376,7 +381,7 @@ class AutoBudget:
                     row,
                     col,
                     f"=SUM({column_letter}{row-2}+0)",
-                    self.font_small_bold,
+                    Style.FONT_SMALL_BOLD,
                     style=True,
                 )
             else:
@@ -385,14 +390,14 @@ class AutoBudget:
                     row,
                     col,
                     f"=SUM({column_letter}{row-2}+{get_column_letter(col-same_every_col)}{row})",
-                    self.font_small_bold,
+                    Style.FONT_SMALL_BOLD,
                     style=True,
                 )
 
         # Accumulation of budgets
         row = sheet.max_row + 1
         self.write_to_cell(
-            sheet, row, self.offset, "Budget (ACC)", self.font_small_bold
+            sheet, row, self.offset, "Budget (ACC)", Style.FONT_SMALL_BOLD
         )
         for col in range(self.offset + 1, sheet.max_column, same_every_col):
             column_letter = get_column_letter(col)
@@ -402,7 +407,7 @@ class AutoBudget:
                     row,
                     col,
                     f"=SUM({column_letter}{row-2}+0)",
-                    self.font_small_bold,
+                    Style.FONT_SMALL_BOLD,
                     style=True,
                 )
             else:
@@ -411,13 +416,13 @@ class AutoBudget:
                     row,
                     col,
                     f"=SUM({column_letter}{row-2}+{get_column_letter(col-same_every_col)}{row})",
-                    self.font_small_bold,
+                    Style.FONT_SMALL_BOLD,
                     style=True,
                 )
 
         # Differential row
         row = sheet.max_row + 1
-        self.write_to_cell(sheet, row, self.offset, "Diff", self.font_small_bold)
+        self.write_to_cell(sheet, row, self.offset, "Diff", Style.FONT_SMALL_BOLD)
         for col in range(self.offset + 1, sheet.max_column, same_every_col):
             column_letter = get_column_letter(col)
             self.write_to_cell(
@@ -425,18 +430,18 @@ class AutoBudget:
                 row,
                 col,
                 f"={column_letter}{row-3} - {column_letter}{row-4}",
-                self.font_small_bold,
+                Style.FONT_SMALL_BOLD,
                 style=True,
             )
 
             # Delete total duplicate in diff column
             self.write_to_cell(
-                sheet, row_total, col + 2, "-", self.font_standard, style=True
+                sheet, row_total, col + 2, "-", Style.FONT_STANDARD, style=True
             )
 
         # Differential (ACC) row
         row = sheet.max_row + 1
-        self.write_to_cell(sheet, row, self.offset, "Diff (ACC)", self.font_small_bold)
+        self.write_to_cell(sheet, row, self.offset, "Diff (ACC)", Style.FONT_SMALL_BOLD)
         for col in range(self.offset + 1, sheet.max_column, same_every_col):
             column_letter = get_column_letter(col)
             self.write_to_cell(
@@ -444,7 +449,7 @@ class AutoBudget:
                 row,
                 col,
                 f"={column_letter}{row-2} - {column_letter}{row-3}",
-                self.font_small_bold,
+                Style.FONT_SMALL_BOLD,
                 style=True,
             )
 
@@ -488,9 +493,9 @@ class AutoBudget:
 
     def style_sheet(self, sheet, same_every_col) -> None:
         # Set column colors
-        color_1 = [self.color_blue_1, self.color_yellow_1]
-        color_2 = [self.color_blue_2, self.color_yellow_2]
-        color_3 = [self.color_blue_3, self.color_yellow_3]
+        color_1 = [Style.COLOR_BLUE_1, Style.COLOR_YELLOW_1]
+        color_2 = [Style.COLOR_BLUE_2, Style.COLOR_YELLOW_2]
+        color_3 = [Style.COLOR_BLUE_3, Style.COLOR_YELLOW_3]
         i_color = 1
         for i_col in range(self.offset, sheet.max_column):
             column_header = sheet.cell(self.offset, i_col).value
@@ -509,7 +514,7 @@ class AutoBudget:
         # Set column borders
         for col in range(self.offset, sheet.max_column + 1):
             for row in range(self.offset, sheet.max_row + 1):
-                sheet.cell(row, col).border = self.border_thin
+                sheet.cell(row, col).border = Style.BORDER_DOTTED
 
         # Upper rows
         self.set_thick_border(
